@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리 반 일기장</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Gowun Dodum', sans-serif;
+            background-color: #fdfbf7; /* 따뜻하고 부드러운 배경색 */
+            color: #333;
+        }
+        .cute-shadow {
+            box-shadow: 0 10px 25px -5px rgba(253, 224, 71, 0.4), 0 8px 10px -6px rgba(253, 224, 71, 0.2);
+        }
+        .btn-hover:hover {
+            transform: translateY(-2px);
+        }
+        .btn-active:active {
+            transform: translateY(1px);
+        }
+        
+        /* 커스텀 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #fcd34d; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #fbbf24; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- 알림 메시지 (Toast) -->
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+        알림 메시지
+    </div>
+
+    <!-- 메인 앱 컨테이너 -->
+    <div class="w-full max-w-2xl bg-white rounded-[2rem] cute-shadow p-6 sm:p-10 relative overflow-hidden border-4 border-yellow-100">
+        
+        <!-- 장식용 요소 -->
+        <div class="absolute top-[-20px] left-[-20px] text-6xl opacity-20">✏️</div>
+        <div class="absolute bottom-[-10px] right-[-10px] text-6xl opacity-20">📓</div>
+
+        <!-- 화면 1: 홈 화면 -->
+        <div id="view-home" class="view-section flex flex-col items-center justify-center py-10">
+            <h1 class="text-4xl sm:text-5xl font-bold text-yellow-500 mb-2 text-center">우리 반 일기장</h1>
+            <p class="text-gray-500 mb-12 text-center">오늘 하루는 어땠나요? 일기를 적어보아요!</p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 w-full px-4">
+                <button onclick="switchView('view-student-login')" class="flex-1 bg-green-100 hover:bg-green-200 text-green-800 border-2 border-green-300 rounded-2xl py-6 px-4 text-xl font-bold transition-all btn-hover btn-active flex flex-col items-center gap-2">
+                    <span class="text-3xl">👦👧</span>
+                    학생으로 입장
+                </button>
+                <button onclick="switchView('view-teacher-login')" class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-800 border-2 border-blue-300 rounded-2xl py-6 px-4 text-xl font-bold transition-all btn-hover btn-active flex flex-col items-center gap-2">
+                    <span class="text-3xl">👩‍🏫👨‍🏫</span>
+                    선생님으로 입장
+                </button>
+            </div>
+        </div>
+
+        <!-- 화면 2: 학생 로그인 -->
+        <div id="view-student-login" class="view-section hidden flex flex-col items-center py-8">
+            <h2 class="text-2xl font-bold text-green-600 mb-6">학생 입장</h2>
+            <div class="w-full max-w-sm">
+                <label for="student-name" class="block text-gray-700 mb-2 font-bold">이름이 무엇인가요?</label>
+                <input type="text" id="student-name" placeholder="예: 홍길동" class="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:border-green-400 mb-6 text-lg">
+                <div class="flex gap-3">
+                    <button onclick="switchView('view-home')" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-bold transition-colors">뒤로</button>
+                    <button onclick="handleStudentLogin()" class="w-2/3 bg-green-400 hover:bg-green-500 text-white rounded-xl py-3 font-bold transition-colors shadow-md">일기 쓰러 가기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 화면 3: 학생 일기 작성 -->
+        <div id="view-student-diary" class="view-section hidden flex flex-col py-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-green-600"><span id="diary-welcome-name"></span>의 일기장</h2>
+                <button onclick="switchView('view-home')" class="text-gray-400 hover:text-gray-600 font-bold">나가기</button>
+            </div>
+            
+            <div id="already-submitted-msg" class="hidden bg-yellow-100 text-yellow-800 p-4 rounded-xl mb-4 font-bold text-center">
+                오늘 일기를 이미 제출했어요! 👏 내용을 수정할 수 있습니다.
+            </div>
+
+            <textarea id="diary-content" class="w-full h-64 p-4 border-2 border-green-200 rounded-xl focus:outline-none focus:border-green-400 resize-none text-lg leading-relaxed mb-6" placeholder="오늘 있었던 재미있는 일이나 속마음을 자유롭게 적어보세요..."></textarea>
+            
+            <button onclick="submitDiary()" class="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl py-4 font-bold text-xl transition-colors shadow-md btn-hover btn-active">
+                선생님께 제출하기 ✨
+            </button>
+        </div>
+
+        <!-- 화면 4: 선생님 로그인 -->
+        <div id="view-teacher-login" class="view-section hidden flex flex-col items-center py-8">
+            <h2 class="text-2xl font-bold text-blue-600 mb-6">선생님 입장</h2>
+            <div class="w-full max-w-sm">
+                <label for="teacher-password" class="block text-gray-700 mb-2 font-bold">비밀번호를 입력하세요</label>
+                <input type="password" id="teacher-password" placeholder="비밀번호" class="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:outline-none focus:border-blue-400 mb-6 text-lg">
+                <div class="flex gap-3">
+                    <button onclick="switchView('view-home')" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-bold transition-colors">뒤로</button>
+                    <button onclick="handleTeacherLogin()" class="w-2/3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl py-3 font-bold transition-colors shadow-md">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 화면 5: 선생님 대시보드 -->
+        <div id="view-teacher-dashboard" class="view-section hidden flex flex-col py-4 h-[80vh] max-h-[600px]">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-blue-600">일기 제출 현황 📋</h2>
+                <button onclick="switchView('view-home')" class="text-gray-400 hover:text-gray-600 font-bold bg-gray-100 px-3 py-1 rounded-lg">로그아웃</button>
+            </div>
+
+            <div class="flex-1 overflow-auto border-2 border-blue-100 rounded-xl bg-white">
+                <table class="w-full text-left border-collapse min-w-full">
+                    <thead class="bg-blue-50 sticky top-0 z-10 shadow-sm">
+                        <tr>
+                            <th class="p-3 border-b border-blue-200 text-blue-800 font-bold w-1/4">이름</th>
+                            <th class="p-3 border-b border-blue-200 text-blue-800 font-bold w-1/4 text-center">제출 여부</th>
+                            <th class="p-3 border-b border-blue-200 text-blue-800 font-bold w-1/2">일기 내용</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboard-table-body" class="divide-y divide-gray-100">
+                        <!-- JS에서 테이블 행이 여기에 동적으로 추가됩니다 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-4 flex justify-between items-center text-sm text-gray-500">
+                <span>총 인원: <span id="total-count" class="font-bold">0</span>명</span>
+                <span>제출 완료: <span id="submit-count" class="font-bold text-green-600">0</span>명</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 데이터 상태 관리 ---
+        // 기본 학급 명단을 비웠습니다. (학생이 이름을 입력하고 접속하면 자동으로 추가됩니다)
+        let classRoster = [];
+        
+        // 학생들의 일기를 저장할 배열 (인메모리)
+        // 형식: { name: "홍길동", content: "일기 내용...", timestamp: Date }
+        let submittedDiaries = [];
+        
+        // 현재 접속중인 학생 이름
+        let currentStudentName = "";
+        
+        // 교사 비밀번호 (설정된 비밀번호)
+        const TEACHER_SECRET = "1234";
+
+        // --- 공통 유틸리티 ---
+        
+        // 화면 전환 함수
+        function switchView(viewId) {
+            // 모든 뷰 숨기기
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.add('hidden');
+            });
+            // 특정 뷰만 보이기
+            document.getElementById(viewId).classList.remove('hidden');
+            
+            // 학생 이름 입력창 초기화 및 포커스
+            if(viewId === 'view-student-login') {
+                document.getElementById('student-name').value = '';
+                setTimeout(() => document.getElementById('student-name').focus(), 100);
+            }
+            
+            // 선생님 비밀번호 입력창 초기화 및 포커스
+            if(viewId === 'view-teacher-login') {
+                document.getElementById('teacher-password').value = '';
+                setTimeout(() => document.getElementById('teacher-password').focus(), 100);
+            }
+        }
+
+        // 토스트 알림 함수 (alert 대체)
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            
+            // 3초 후 사라짐
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 3000);
+        }
+
+        // --- 학생 기능 ---
+        
+        // 학생 로그인 처리
+        function handleStudentLogin() {
+            const nameInput = document.getElementById('student-name').value.trim();
+            if (!nameInput) {
+                showToast("이름을 입력해주세요! 😅");
+                return;
+            }
+
+            currentStudentName = nameInput;
+            
+            // 만약 명단에 없는 새로운 이름이라면 명단에 추가 (유연한 사용을 위해)
+            if (!classRoster.includes(currentStudentName)) {
+                classRoster.push(currentStudentName);
+            }
+
+            // 환영 메시지 세팅
+            document.getElementById('diary-welcome-name').textContent = currentStudentName;
+
+            // 이미 제출한 일기가 있는지 확인
+            const existingDiary = submittedDiaries.find(d => d.name === currentStudentName);
+            const contentArea = document.getElementById('diary-content');
+            const alertMsg = document.getElementById('already-submitted-msg');
+
+            if (existingDiary) {
+                contentArea.value = existingDiary.content;
+                alertMsg.classList.remove('hidden');
+            } else {
+                contentArea.value = "";
+                alertMsg.classList.add('hidden');
+            }
+
+            switchView('view-student-diary');
+            setTimeout(() => contentArea.focus(), 100);
+        }
+
+        // 일기 제출 처리
+        function submitDiary() {
+            const content = document.getElementById('diary-content').value.trim();
+            if (!content) {
+                showToast("일기 내용을 조금이라도 적어주세요! 🥺");
+                return;
+            }
+
+            // 기존 제출 기록 찾기
+            const existingIndex = submittedDiaries.findIndex(d => d.name === currentStudentName);
+            
+            if (existingIndex >= 0) {
+                // 수정
+                submittedDiaries[existingIndex].content = content;
+                submittedDiaries[existingIndex].timestamp = new Date();
+            } else {
+                // 새로 제출
+                submittedDiaries.push({
+                    name: currentStudentName,
+                    content: content,
+                    timestamp: new Date()
+                });
+            }
+
+            showToast("선생님께 일기가 잘 전달되었어요! 🎉");
+            switchView('view-home');
+        }
+
+        // --- 선생님 기능 ---
+        
+        // 교사 로그인 처리
+        function handleTeacherLogin() {
+            const pwd = document.getElementById('teacher-password').value;
+            if (pwd === TEACHER_SECRET) {
+                renderDashboard();
+                switchView('view-teacher-dashboard');
+                showToast("환영합니다, 선생님! 😊");
+            } else {
+                showToast("비밀번호가 틀렸습니다. 🔒");
+            }
+        }
+
+        // 대시보드(표) 렌더링
+        function renderDashboard() {
+            const tbody = document.getElementById('dashboard-table-body');
+            tbody.innerHTML = ""; // 기존 내용 비우기
+            
+            let submitCount = 0;
+
+            // 명단을 가나다 순으로 정렬하여 표시
+            const sortedRoster = [...classRoster].sort();
+
+            sortedRoster.forEach(studentName => {
+                const diaryRecord = submittedDiaries.find(d => d.name === studentName);
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-blue-50 transition-colors";
+
+                // 1. 이름 열
+                const tdName = document.createElement('td');
+                tdName.className = "p-3 font-medium text-gray-800";
+                tdName.textContent = studentName;
+
+                // 2. 제출 여부 열
+                const tdStatus = document.createElement('td');
+                tdStatus.className = "p-3 text-center";
+                if (diaryRecord) {
+                    tdStatus.innerHTML = `<span class="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">제출 완료</span>`;
+                    submitCount++;
+                } else {
+                    tdStatus.innerHTML = `<span class="inline-block bg-red-50 text-red-500 px-3 py-1 rounded-full text-sm font-bold">미제출</span>`;
+                }
+
+                // 3. 내용 열
+                const tdContent = document.createElement('td');
+                tdContent.className = "p-3 text-gray-600 text-sm whitespace-pre-line"; // 줄바꿈 유지
+                
+                if (diaryRecord) {
+                    tdContent.textContent = diaryRecord.content;
+                } else {
+                    tdContent.textContent = "-";
+                    tdContent.className += " text-gray-300 italic";
+                }
+
+                tr.appendChild(tdName);
+                tr.appendChild(tdStatus);
+                tr.appendChild(tdContent);
+                tbody.appendChild(tr);
+            });
+
+            // 통계 업데이트
+            document.getElementById('total-count').textContent = classRoster.length;
+            document.getElementById('submit-count').textContent = submitCount;
+        }
+
+        // 엔터키 지원 (입력창에서 엔터 누르면 버튼 클릭되도록)
+        document.getElementById('student-name').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleStudentLogin();
+        });
+        document.getElementById('teacher-password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleTeacherLogin();
+        });
+
+    </script>
+</body>
+</html>
